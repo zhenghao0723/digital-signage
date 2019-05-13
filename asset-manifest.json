@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/digital-signage/static/css/main.2cce8147.chunk.css",
-    "main.js": "/digital-signage/static/js/main.4ad77c4d.chunk.js",
-    "main.js.map": "/digital-signage/static/js/main.4ad77c4d.chunk.js.map",
+    "main.js": "/digital-signage/static/js/main.02b9429e.chunk.js",
+    "main.js.map": "/digital-signage/static/js/main.02b9429e.chunk.js.map",
     "runtime~main.js": "/digital-signage/static/js/runtime~main.8a86d63a.js",
     "runtime~main.js.map": "/digital-signage/static/js/runtime~main.8a86d63a.js.map",
     "static/js/2.b41502e9.chunk.js": "/digital-signage/static/js/2.b41502e9.chunk.js",
     "static/js/2.b41502e9.chunk.js.map": "/digital-signage/static/js/2.b41502e9.chunk.js.map",
     "index.html": "/digital-signage/index.html",
-    "precache-manifest.26d3720aa42114d6751ebad5d6bde72b.js": "/digital-signage/precache-manifest.26d3720aa42114d6751ebad5d6bde72b.js",
+    "precache-manifest.545062ce960726bfa41933702b6a7ff4.js": "/digital-signage/precache-manifest.545062ce960726bfa41933702b6a7ff4.js",
     "service-worker.js": "/digital-signage/service-worker.js",
     "static/css/main.2cce8147.chunk.css.map": "/digital-signage/static/css/main.2cce8147.chunk.css.map",
     "static/media/logo.svg": "/digital-signage/static/media/logo.5d5d9eef.svg"

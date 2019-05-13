@@ -1,10 +1,10 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "1e8ebded4d15d08a991218b936c75e55",
+    "revision": "2bcfa9919c1ccecdc13f7171b0e46c73",
     "url": "/digital-signage/index.html"
   },
   {
-    "revision": "052ce29a6a24ddd62f8b",
+    "revision": "d4401867e05020118d5b",
     "url": "/digital-signage/static/css/main.2cce8147.chunk.css"
   },
   {
@@ -12,8 +12,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/digital-signage/static/js/2.b41502e9.chunk.js"
   },
   {
-    "revision": "052ce29a6a24ddd62f8b",
-    "url": "/digital-signage/static/js/main.4ad77c4d.chunk.js"
+    "revision": "d4401867e05020118d5b",
+    "url": "/digital-signage/static/js/main.02b9429e.chunk.js"
   },
   {
     "revision": "ec0c101fde480160623d",
