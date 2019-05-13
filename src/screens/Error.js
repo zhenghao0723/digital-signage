@@ -1,12 +1,9 @@
 import React, { Component } from 'react';
+import { Redirect } from 'react-router-dom'
 
 class Error extends Component {
     render() {
-      return (
-          <div>
-            <h2>Path does not exist</h2>
-          </div>
-      );
+      return <Redirect to='/digital-signage' />
     }
 }
   
