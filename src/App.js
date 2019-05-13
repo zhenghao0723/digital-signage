@@ -19,14 +19,14 @@ function App() {
       <div>
         <Navigation />
         <Switch>
-          <Route path="/" component={Dashboard} exact />
-          <Route path="/stations" component={Stations} />
-          <Route path="/contents" component={Contents} />
-          <Route path="/templates" component={Templates} />
-          <Route path="/campaigns" component={Campaigns} />
-          <Route path="/networks" component={Networks} />
-          <Route path="/reports" component={Reports} />
-          <Route path="/admin" component={Admin} />
+          <Route path="/digital-signage" component={Dashboard} exact />
+          <Route path="/digital-signage/stations" component={Stations} />
+          <Route path="/digital-signage/contents" component={Contents} />
+          <Route path="/digital-signage/templates" component={Templates} />
+          <Route path="/digital-signage/campaigns" component={Campaigns} />
+          <Route path="/digital-signage/networks" component={Networks} />
+          <Route path="/digital-signage/reports" component={Reports} />
+          <Route path="/digital-signage/admin" component={Admin} />
           <Route component={Error} />
         </Switch>
       </div>
