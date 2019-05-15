@@ -290,7 +290,7 @@ class EnhancedTable extends React.Component {
 
   bytesToSize = (bytes) => {
     var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    if (bytes == 0) return '0 Byte';
+    if (bytes === 0) return '0 Byte';
     var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
     return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
   };
@@ -421,7 +421,7 @@ class EnhancedTable extends React.Component {
         snapshot.forEach(childSnapshot => {
           const item = childSnapshot.val();
           
-          if(item.folder == this.state.selectedId){
+          if(item.folder === this.state.selectedId){
               
               firebase.database().ref('media').child(childSnapshot.key).remove().then(() => {
         
@@ -456,7 +456,7 @@ class EnhancedTable extends React.Component {
         snapshot.forEach(childSnapshot => {
             const item = childSnapshot.val();
             
-            if(item.folder == items){
+            if(item.folder === items){
                 
                 firebase.database().ref('media').child(childSnapshot.key).remove().then(() => {
             
@@ -751,7 +751,7 @@ class EnhancedTable extends React.Component {
 
                           if(value.thumbnail){
                             return(
-                                <TableCell onClick={event => this.handleClick(event, n.id)} align="left" padding="default">
+                                <TableCell key={value.id} onClick={event => this.handleClick(event, n.id)} align="left" padding="default">
                                     {(n.type === 'video/mp4') ? <div style={{ height: 50}} ><MovieRounded style={{ fontSize: 50, color: "#b4b4b4" }}/></div> : <img style={{ height: 50}} src={n.imageUrl} alt=""/>}
                                 </TableCell>
                             )
@@ -760,7 +760,7 @@ class EnhancedTable extends React.Component {
                           else if(value.action)
                           {
                             return(
-                              <TableCell align="left" padding="none" >
+                              <TableCell key={value.id} align="left" padding="none" >
                                   <div className={classes.actionButtons}>
                                       <IconButton color={n.total > 0 ? "primary" : "default"} disabled={n.total > 0 ? false : true} onClick={() => this.onFolderClick(n.id, n.name) }>
                                           <FolderIcon fontSize="small" />
@@ -780,20 +780,20 @@ class EnhancedTable extends React.Component {
                           else if(value.id === 'size')
                           {
                             return(
-                                <TableCell onClick={event => this.handleClick(event, n.id)} align="left" padding="default">{this.bytesToSize(n[value.id])}</TableCell>
+                                <TableCell key={value.id} onClick={event => this.handleClick(event, n.id)} align="left" padding="default">{this.bytesToSize(n[value.id])}</TableCell>
                               )
                           }
 
                           else if(value.id === 'created')
                           {
                             return(
-                                <TableCell onClick={event => this.handleClick(event, n.id)} align="left" padding="default">{new Intl.DateTimeFormat('en-US', {year: 'numeric', month: '2-digit',day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}).format(n[value.id])}</TableCell>
+                                <TableCell key={value.id} onClick={event => this.handleClick(event, n.id)} align="left" padding="default">{new Intl.DateTimeFormat('en-US', {year: 'numeric', month: '2-digit',day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}).format(n[value.id])}</TableCell>
                               )
                           }
                           
                           else {
                             return(
-                                <TableCell onClick={event => this.handleClick(event, n.id)} align="left" padding="default">{n[value.id]}</TableCell>
+                                <TableCell key={value.id} onClick={event => this.handleClick(event, n.id)} align="left" padding="default">{n[value.id]}</TableCell>
                               )
                           }
                           

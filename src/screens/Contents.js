@@ -84,7 +84,7 @@ class Contents extends Component {
 
   render() {
     return (
-        <div>
+        <div style={{ padding: 20 }}>
           <CustomizedDropzone />
           <CustomizedExpansionPanel panel={[{ name: 'Media', content: this.renderMediaContent() }, { name: 'Folders', content: this.renderFoldersContent() }]}/>
         </div>

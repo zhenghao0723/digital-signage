@@ -144,7 +144,7 @@ const toolbarStyles = theme => ({
 });
 
 let EnhancedTableToolbar = props => {
-  const { numSelected, classes, onMoveAllClick, onDeleteAllClick, movefile } = props;
+  const { folderSelection, select, numSelected, classes, onMoveAllClick, onDeleteAllClick, movefile, onAddMediaClick, currentFolder, handleFolderChange, folderCollection} = props;
 
   return (
     <Toolbar
@@ -157,16 +157,48 @@ let EnhancedTableToolbar = props => {
           <Typography color="inherit" variant="subtitle1">
             {numSelected} selected
           </Typography>
-        ) : (
-          <Typography variant="h6" id="tableTitle">
-            
-          </Typography>
+        ) : ( folderSelection ?
+          <FormControl fullWidth variant="outlined" >
+              <InputLabel
+                  htmlFor="outlined-age-simple"
+              >
+                  Folder
+              </InputLabel>
+              <Select
+                  value={currentFolder}
+                  onChange={handleFolderChange}
+                  input={
+                  <OutlinedInput
+                      labelWidth={100}
+                      name="folder"
+                      id="outlined-age-simple"
+                  />
+                  }
+              >
+                  
+                  <MenuItem value="default">
+                  <em>Default</em>
+                  </MenuItem>
+                  {folderCollection.map(n => {
+                  return(
+                      <MenuItem key={n.id} value={n.id}>{n.name}</MenuItem>
+                  )
+                  })}
+
+              </Select>
+          </FormControl> : <div></div>
         )}
       </div>
       <div className={classes.spacer} />
       <div className={classes.actions}>
         {numSelected > 0 ? (
           movefile ? <div style={{ display: 'flex', alignItems: 'center' }}>
+            { select ? 
+            <Tooltip title="select">
+                <Button onClick={onAddMediaClick} color="primary">
+                Select
+                </Button>
+            </Tooltip> : <div></div>}
             <Tooltip title="Move">
                 <IconButton aria-label="Move" onClick={onMoveAllClick}>
                 <SubdirectoryArrowLeft />
@@ -227,7 +259,10 @@ class EnhancedTable extends React.Component {
     dialogUrl: null,
     dialogType: null,
     dialogOption: '',
-    selectedFileName: ''
+    selectedFileName: '',
+    selectedFolder: 'default',
+    data: [],
+    currentFolder: 'default',
   };
 
   handleRequestSort = (event, property) => {
@@ -243,7 +278,7 @@ class EnhancedTable extends React.Component {
 
   handleSelectAllClick = event => {
     if (event.target.checked) {
-      this.setState({ selected: this.props.data.map(n => n.id) })
+      this.setState({ selected: this.state.data.map(n => n.id) })
       return;
     }
     this.setState({ selected: [] });
@@ -282,7 +317,7 @@ class EnhancedTable extends React.Component {
 
   bytesToSize = (bytes) => {
     var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    if (bytes == 0) return '0 Byte';
+    if (bytes === 0) return '0 Byte';
     var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
     return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
   };
@@ -431,7 +466,7 @@ class EnhancedTable extends React.Component {
     if(this.state.dialogOption === 'preview'){
         return(
             <DialogContent>
-                { this.state.dialogType === 'video/mp4' ? <video style={{ width: '100%'}}  autoPlay src={this.state.dialogUrl} type="video/mp4"></video> : <img style={{ width: '100%'}} src={this.state.dialogUrl} /> }
+                { this.state.dialogType === 'video/mp4' ? <video style={{ width: '100%'}}  autoPlay src={this.state.dialogUrl} type="video/mp4"></video> : <img alt='' style={{ width: '100%'}} src={this.state.dialogUrl} /> }
             </DialogContent>
         )
     } 
@@ -584,9 +619,53 @@ class EnhancedTable extends React.Component {
       
   }
 
+  handleFolderChange = event => {
+
+    let ref = firebase.database().ref('media');
+
+    ref.on('value', snapshot => {
+        const data = [];
+
+        snapshot.forEach(childSnapshot => {
+          const item = childSnapshot.val();
+          item.key = childSnapshot.key;
+          
+          if(item.folder === event.target.value)
+          {
+            data.push({id:item.key, name: item.name, imageUrl: item.imageUrl, created: item.created, type: item.type, size: item.size, folder: item.folder });
+          }
+          
+        });
+
+        this.setState({ data, currentFolder: event.target.value });
+    });
+
+  };  
+
+  componentWillMount(){
+    let ref = firebase.database().ref('media');
+
+    ref.on('value', snapshot => {
+        const data = [];
+
+        snapshot.forEach(childSnapshot => {
+          const item = childSnapshot.val();
+          item.key = childSnapshot.key;
+          
+          if(item.folder === this.state.currentFolder)
+          {
+            data.push({id:item.key, name: item.name, imageUrl: item.imageUrl, created: item.created, type: item.type, size: item.size, folder: item.folder });
+          }
+          
+        });
+
+        this.setState({ data });
+    });
+  }
+
   render() {
-    const { classes, rows, data } = this.props;
-    const { order, orderBy, selected, rowsPerPage, page } = this.state;
+    const { classes, rows } = this.props;
+    const { data, order, orderBy, selected, rowsPerPage, page } = this.state;
     const emptyRows = rowsPerPage - Math.min(rowsPerPage, data.length - page * rowsPerPage);
 
     return (
@@ -601,7 +680,7 @@ class EnhancedTable extends React.Component {
           </DialogTitle>
           {this.renderDialog()}
         </Dialog>
-        <EnhancedTableToolbar numSelected={selected.length} onDeleteAllClick={this.onDeleteAllClick} onMoveAllClick={this.onMoveAllClick} movefile={this.props.movefile}/>
+        <EnhancedTableToolbar folderSelection={this.props.folderSelection} numSelected={selected.length} onDeleteAllClick={this.onDeleteAllClick} onMoveAllClick={this.onMoveAllClick} movefile={this.props.movefile} select={this.props.select} onAddMediaClick={()=> this.props.onAddMediaClick(this.state.selected)} currentFolder={this.state.currentFolder} handleFolderChange={this.handleFolderChange} folderCollection={this.props.folderCollection}/>
         <div className={classes.tableWrapper}>
           <Table className={classes.table} aria-labelledby="tableTitle">
             <EnhancedTableHead
@@ -635,7 +714,7 @@ class EnhancedTable extends React.Component {
 
                           if(value.thumbnail){
                             return(
-                                <TableCell onClick={event => this.handleClick(event, n.id)} align="left" padding="default">
+                                <TableCell key={value.id} onClick={event => this.handleClick(event, n.id)} align="left" padding="default">
                                     {(n.type === 'video/mp4') ? <div style={{ height: 50}} ><MovieRounded style={{ fontSize: 50, color: "#b4b4b4" }}/></div> : <img style={{ height: 50}} src={n.imageUrl} alt=""/>}
                                 </TableCell>
                             )
@@ -646,7 +725,7 @@ class EnhancedTable extends React.Component {
                               if(this.props.preview)
                               {
                                 return(
-                                    <TableCell align="left" padding="none" >
+                                    <TableCell key={value.id} align="left" padding="none" >
                                         <div className={classes.actionButtons}>
                                             <IconButton color="primary" onClick={() => this.onPreviewClick(n.type, n.name, n.imageUrl) }>
                                                 <PreviewIcon fontSize="small" />
@@ -662,7 +741,7 @@ class EnhancedTable extends React.Component {
                                 )
                               } else {
                                 return(
-                                    <TableCell align="left" padding="none" >
+                                    <TableCell key={value.id} align="left" padding="none" >
                                         <div className={classes.actionButtons}>
                                             <IconButton onClick={() => this.onEditClick(n.id, n.name) }>
                                                 <EditIcon fontSize="small" />
@@ -680,20 +759,20 @@ class EnhancedTable extends React.Component {
                           else if(value.id === 'size')
                           {
                             return(
-                                <TableCell onClick={event => this.handleClick(event, n.id)} align="left" padding="default">{this.bytesToSize(n[value.id])}</TableCell>
+                                <TableCell key={value.id} onClick={event => this.handleClick(event, n.id)} align="left" padding="default">{this.bytesToSize(n[value.id])}</TableCell>
                               )
                           }
 
                           else if(value.id === 'created')
                           {
                             return(
-                                <TableCell onClick={event => this.handleClick(event, n.id)} align="left" padding="default">{new Intl.DateTimeFormat('en-US', {year: 'numeric', month: '2-digit',day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}).format(n[value.id])}</TableCell>
+                                <TableCell key={value.id} onClick={event => this.handleClick(event, n.id)} align="left" padding="default">{new Intl.DateTimeFormat('en-US', {year: 'numeric', month: '2-digit',day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}).format(n[value.id])}</TableCell>
                               )
                           }
                           
                           else {
                             return(
-                                <TableCell onClick={event => this.handleClick(event, n.id)} align="left" padding="default">{n[value.id]}</TableCell>
+                                <TableCell key={value.id} onClick={event => this.handleClick(event, n.id)} align="left" padding="default">{n[value.id]}</TableCell>
                               )
                           }
                           
