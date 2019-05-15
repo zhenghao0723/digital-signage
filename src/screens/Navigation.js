@@ -83,6 +83,7 @@ class Navigation extends Component {
 
   state = {
     open: false,
+    appBarTitle:'Dashboard'
   };
 
   handleDrawerOpen = () => {
@@ -127,7 +128,7 @@ class Navigation extends Component {
               <MenuIcon />
             </IconButton>
             <Typography variant="h6" color="inherit" noWrap>
-              
+              {this.state.appBarTitle}
             </Typography>
           </Toolbar>
         </AppBar>
@@ -149,7 +150,7 @@ class Navigation extends Component {
           <Divider />
           <List>
           {['Dashboard', 'Stations', 'Contents', 'Templates', 'Campaigns', 'Networks', 'Reports', 'Admin'].map((text, index) => (
-              <ListItem button component={Link} to={text === 'Dashboard' ? '/digital-signage' : '/digital-signage/' + text.toLowerCase()} key={text} onClick={()=> this.setState({ open: false })}>
+              <ListItem button component={Link} to={text === 'Dashboard' ? '/digital-signage' : '/digital-signage/' + text.toLowerCase()} key={text} onClick={()=> this.setState({ open: false, appBarTitle: text })}>
                 <ListItemIcon>{icons[index]}</ListItemIcon>
                 <ListItemText primary={<Typography style={{ fontWeight:'500', color: '#4d4c4c' }}>{text}</Typography>} />
               </ListItem>

@@ -75,7 +75,7 @@ class ForgotPassword extends Component {
                             value={this.state.email}
                             onChange={this.handleChange}
                         />
-                        <Button style={{ marginTop:20 }} variant="outlined" type="submit" disabled={this.state.email == ''? true : false}>Send</Button>
+                        <Button style={{ marginTop:20 }} variant="outlined" type="submit" disabled={this.state.email === ''? true : false}>Send</Button>
                         <Typography style={{ marginTop: 20 }} variant="caption" className={classes.title} component={Link} to={'/digital-signage'} >Back to Login Page</Typography>
                     </form>
                 </Paper>
