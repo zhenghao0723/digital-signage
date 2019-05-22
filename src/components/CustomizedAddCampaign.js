@@ -24,30 +24,58 @@ import CustomizedTable from './CustomizedTable'
 import Paper from '@material-ui/core/Paper';
 import AutoFitImage from 'react-image-autofit-frame';
 import TextField from '@material-ui/core/TextField';
+import Fade from '@material-ui/core/Fade';
+import Zoom from '@material-ui/core/Zoom';
+import Grow from '@material-ui/core/Grow';
+import { compose } from "recompose";
+import ReactTimeout from 'react-timeout'
+import { MovieRounded } from '@material-ui/icons';
+import ReactPlayer from 'react-player'
 
 const styles = theme => ({
     root: {
         width: '100%',
+    },
+    container: {
+      border: '5px solid #f50057'
+    },
+    mediaContainer: {
+      position: 'absolute',
     }
 });
 
 const windowHeight = window.innerHeight - 115
 
-const SortableItem = sortableElement(({value, index, handleToggle, checked, mediaCollection}) => 
+const SortableItem = sortableElement(({value, index, handleToggle, checked, mediaCollection, allContainer, currentContainer}) => 
 {
   return mediaCollection.map(val => {
-    if(val.id === value){
-      return(
-        <ListItem key={index} style={{ backgroundColor: '#fafafa'}} divider dense button onClick={handleToggle(val.id)}>
-          <Checkbox
-          checked={checked.indexOf(val.id) !== -1}
-          tabIndex={-1}
-          />
-          <Avatar src={val.imageUrl}>
-          </Avatar>
-          <ListItemText primary={val.name} />
-        </ListItem>
-      )
+    if(val.id === value.content){
+
+      if(val.type === "video/mp4"){
+        return(
+          <ListItem key={index} selected={allContainer[currentContainer] === value.content ? true : false } divider dense button onClick={handleToggle(val.id)}>
+            <Checkbox
+            checked={checked.indexOf(val.id) !== -1}
+            tabIndex={-1}
+            />
+            <MovieRounded style={{ fontSize: 30, marginLeft:5, marginRight: 5, color: "#b4b4b4" }}/>
+            <ListItemText primary={val.name} />
+          </ListItem>
+        )
+      } else {
+        return(
+          <ListItem key={index} selected={allContainer[currentContainer] === value.content ? true : false } divider dense button onClick={handleToggle(val.id)}>
+            <Checkbox
+            checked={checked.indexOf(val.id) !== -1}
+            tabIndex={-1}
+            />
+            <Avatar src={val.imageUrl}>
+            </Avatar>
+            <ListItemText primary={val.name} />
+          </ListItem>
+        )
+      }
+      
     }
   })
 })
@@ -55,6 +83,8 @@ const SortableItem = sortableElement(({value, index, handleToggle, checked, medi
 const SortableContainer = sortableContainer(({children}) => {
   return <List>{children}</List>;
 });
+
+var timeout = [];
 
 class CustomizedAddCampaign extends Component {
 
@@ -71,7 +101,11 @@ class CustomizedAddCampaign extends Component {
         currentContainer: 0,
         checked: [],
         campaignName: '',
-        mediaCollection: []
+        mediaCollection: [],
+        contentDuration: 0,
+        transitionSelected: 'fade',
+        dialogTitleVisible: true,
+        currentSlideIndex: [0]
     }
 
     componentWillMount(){
@@ -126,6 +160,7 @@ class CustomizedAddCampaign extends Component {
     handleTemplateChange = event => {
         const contents = []
         const allContainer = []
+        const currentSlideIndex = []
         if(event.target.value !== 'default')
         {
           this.state.templateCollection.map(value => { 
@@ -133,15 +168,17 @@ class CustomizedAddCampaign extends Component {
               value.container.map(value => { 
                 contents.push([])
                 allContainer.push('')
+                currentSlideIndex.push(0)
               })
             }
           })
         } else {
           contents.push([])
           allContainer.push('')
+          currentSlideIndex.push(0)
         }
 
-        this.setState({ selectedTemplate: event.target.value, contents, allContainer, currentContainer: 0 })
+        this.setState({ selectedTemplate: event.target.value, contents, allContainer, currentContainer: 0, contentDuration: 0, transitionSelected: 'fade', currentSlideIndex })
     }
 
     handleToggle = value => () => {
@@ -170,7 +207,7 @@ class CustomizedAddCampaign extends Component {
         itemsArray = arrayMove(this.state.contents[this.state.currentContainer], oldIndex, newIndex)
         
         finalItemsArray.map((value, index) => {
-          if(index == this.state.currentContainer){
+          if(index === this.state.currentContainer){
             finalItemsArray[index] = itemsArray
           }
         })
@@ -184,17 +221,39 @@ class CustomizedAddCampaign extends Component {
             
             if(num == this.state.currentContainer)
             {
-            return this.state.contents[this.state.currentContainer][index]
+            return this.state.contents[this.state.currentContainer][index].content
             } else {
             return this.state.allContainer[num]
             }
         })
 
-        this.setState({ allContainer })
+        if(this.state.contents[this.state.currentContainer][index].type === 'video/mp4')
+        {
+          this.setState({ allContainer, contentDuration: null, transitionSelected: this.state.contents[this.state.currentContainer][index].transition })
+        } else {
+          this.setState({ allContainer, contentDuration: this.state.contents[this.state.currentContainer][index].duration, transitionSelected: this.state.contents[this.state.currentContainer][index].transition })
+        }
+        
     }
 
     handleClose = () => {
-        this.setState({ openDialog: false });
+        
+      const currentSlideIndex = []
+      if(this.state.selectedTemplate !== 'default'){
+        const currentIndex = this.state.templateCollection.map(val => { return val.id }).indexOf(this.state.selectedTemplate)
+        this.state.templateCollection[currentIndex].container.map((val, index) => {
+          clearTimeout(timeout[index])
+          timeout[index] = null
+          currentSlideIndex.push(0)
+        })
+      } else {
+          clearTimeout(timeout[0])
+          timeout[0] = null
+          currentSlideIndex.push(0)
+      }
+        
+
+        this.setState({ openDialog: false, currentSlideIndex });
     };
 
     renderSortableItem = () => {
@@ -202,7 +261,7 @@ class CustomizedAddCampaign extends Component {
      {
       return this.state.contents[this.state.currentContainer].map((val,index)=>{
           return(
-            <SortableItem key={`item-${index}`} index={index} value={val} handleToggle={this.handleToggle} checked={this.state.checked} mediaCollection={this.state.mediaCollection}/>
+            <SortableItem key={`item-${index}`} index={index} value={val} handleToggle={this.handleToggle} checked={this.state.checked} mediaCollection={this.state.mediaCollection} currentContainer={this.state.currentContainer} allContainer={this.state.allContainer}/>
           )
         })
      } else {
@@ -246,7 +305,7 @@ class CustomizedAddCampaign extends Component {
             this.state.mediaCollection.map((value, mediaIndex) => {
               if(value.id === this.state.allContainer[index])
               {
-                mediaData.push({ id: value.id, name: value.name, imageUrl: value.imageUrl })
+                mediaData.push({ id: value.id, name: value.name, imageUrl: value.imageUrl, type: value.type })
               }
             })
 
@@ -255,24 +314,56 @@ class CustomizedAddCampaign extends Component {
           }
           
         })
-
-       
         
-        return templateData.map((value, index) => 
-          <Grid key={value.id} onClick={()=> { 
-            
-              if(this.state.currentContainer != index)
-              {
-                this.setState({ currentContainer: index, checked: [] }) 
-              }
-            
-            }} item>
-            <Paper square 
-              style={{height: value.height/4, width:value.width/4}}
-            >
-              <AutoFitImage imgSize="contain" frameWidth={value.width/4 + "px"} frameHeight={value.height/4 + "px"} imgSrc={mediaData[index] ? mediaData[index].imageUrl : ''} style={{/*..your style here..*/}}/>
-            </Paper>
-          </Grid>)
+        return templateData.map((value, index) => {
+
+          if(mediaData[index].type === "video/mp4")
+          {
+            return (
+              <Grid key={value.id} style={{height: value.height/4, width:value.width/4}} onClick={()=> { 
+    
+                  if(this.state.currentContainer !== index)
+                  {
+                    const currentContent = this.state.allContainer[index]
+                    const currenIndex = this.state.contents[index].map(val => { return val.content }).indexOf(currentContent)
+                    
+                    if(currenIndex !== -1){
+                      this.setState({ currentContainer: index, checked: [], transitionSelected: this.state.contents[index][currenIndex].transition, contentDuration: this.state.contents[index][currenIndex].duration });
+                    } else {
+                      this.setState({ currentContainer: index, checked: [] }) 
+                    }
+    
+                  }
+                  
+                }} item>
+                <Paper className={ this.state.currentContainer === index ? this.props.classes.container : null } square style={{height: '100%', width:'100%', display: 'flex', justifyContent: 'center'}} >
+                  <video style={{ width: '100%' }}  autoPlay src={mediaData[index] ? mediaData[index].imageUrl : ''} type="video/mp4"></video>
+                </Paper>
+              </Grid> )
+          } else {
+            return (
+              <Grid key={value.id} style={{height: value.height/4, width:value.width/4}} onClick={()=> { 
+    
+                  if(this.state.currentContainer !== index)
+                  {
+                    const currentContent = this.state.allContainer[index]
+                    const currenIndex = this.state.contents[index].map(val => { return val.content }).indexOf(currentContent)
+                    
+                    if(currenIndex !== -1){
+                      this.setState({ currentContainer: index, checked: [], transitionSelected: this.state.contents[index][currenIndex].transition, contentDuration: this.state.contents[index][currenIndex].duration });
+                    } else {
+                      this.setState({ currentContainer: index, checked: [] }) 
+                    }
+    
+                  }
+                  
+                }} item>
+                <Paper className={ this.state.currentContainer === index ? this.props.classes.container : null } square style={{height: '100%', width:'100%'}} >
+                  <AutoFitImage imgSize="contain" imgSrc={mediaData[index] ? mediaData[index].imageUrl : ''} style={{/*..your style here..*/}}/>
+                </Paper>
+              </Grid> )
+          }
+        })
 
       } else {
 
@@ -286,7 +377,7 @@ class CustomizedAddCampaign extends Component {
             this.state.mediaCollection.map((val, mediaindex) => {
               if(val.id === this.state.allContainer[index])
               {
-                mediaData.push({ id: val.id, name: val.name, imageUrl: val.imageUrl })
+                mediaData.push({ id: val.id, name: val.name, imageUrl: val.imageUrl, type: val.type })
               }
             })
           } else {
@@ -295,14 +386,27 @@ class CustomizedAddCampaign extends Component {
           
         })
        
-        return (
-          <Grid item>
-            <Paper square
-              style={{ height: 1920/4, width:1080/4 }}
-            >
-              <AutoFitImage imgSize="contain" frameWidth={1080/4 + "px"} frameHeight={1920/4 + "px"} imgSrc={mediaData[0] ? mediaData[0].imageUrl : ''} style={{/*..your style here..*/}}/>
-            </Paper>
-          </Grid>)
+        if(mediaData[0] && mediaData[0].type === "video/mp4")
+        {
+          return (
+            <Grid item>
+              <Paper square
+                style={{ height: 1920/4, width:1080/4, display: 'flex', justifyContent: 'center' }}
+              >
+                <video style={{ width: '100%' }}  autoPlay src={mediaData[0] ? mediaData[0].imageUrl : ''} type="video/mp4"></video>
+              </Paper>
+            </Grid>)
+        } else {
+          return (
+            <Grid item>
+              <Paper square
+                style={{ height: 1920/4, width:1080/4 }}
+              >
+                <AutoFitImage imgSize="contain" frameWidth={1080/4 + "px"} frameHeight={1920/4 + "px"} imgSrc={mediaData[0] ? mediaData[0].imageUrl : ''} style={{/*..your style here..*/}}/>
+              </Paper>
+            </Grid>)
+        }
+        
       }
       
     }
@@ -332,14 +436,96 @@ class CustomizedAddCampaign extends Component {
                     </DialogContent>
                 </div>
             )
+        } else if (this.state.dialogOption === 'preview'){
+
+          if(this.state.selectedTemplate !== 'default'){
+
+            const templateData = [];
+            this.state.templateCollection.map((value, index) => {
+              if(value.id === this.state.selectedTemplate)
+              {
+                value.container.map((val, index) => {
+                  templateData.push({ id:val.id, width: val.width, height: val.height })
+                })
+              }
+            })
+
+            return(
+              <DialogContent style={{ backgroundColor: '#efefef', paddingTop: 25 }}>
+                {templateData.map((value, index) => {
+                  return (
+                      <Grid key={value.id} style={{height: value.height/4, width:value.width/4}} item>
+                        {this.renderListAllCarouselItem( index, value.width/4, value.height/4 )}
+                      </Grid>
+                    )
+                })}
+              </DialogContent>
+            )
+            
+          } else {
+            return (
+              <DialogContent style={{ backgroundColor: '#efefef', paddingTop: 25 }}>
+                <Grid style={{height: 1920/4, width: 1080/4}} item>
+                  {this.renderListAllCarouselItem(0, 1080/4, 1920/4)}
+                </Grid>
+              </DialogContent>)
+          }
+
         }
+    }
+
+    renderListAllCarouselItem = (cIndex, itemWidth, itemHeight) => {
+        return this.state.contents[cIndex].map((value, index) => { 
+
+          const currentIndex = this.state.mediaCollection.map(val => { return val.id }).indexOf(value.content)
+
+          if(value.transition === 'none'){
+            return <Fade key={index} timeout={0} in={this.state.currentSlideIndex[cIndex] === index ? true : false} >
+              <Paper square className={this.props.classes.mediaContainer} style={{ height: itemHeight, width:itemWidth, display: 'flex', justifyContent: 'center', alignItems: 'center' }} >
+              {this.state.mediaCollection[currentIndex].type === "video/mp4" ? <ReactPlayer width='100%' height="100%" loop={this.state.contents[cIndex].length > 1 ? false : true} playing={this.state.currentSlideIndex[cIndex] === index ? true : false} url={this.state.mediaCollection[currentIndex].imageUrl} onEnded={()=> this.toggleNextSlide(cIndex)}/>:<AutoFitImage imgSize="contain" imgSrc={this.state.mediaCollection[currentIndex].imageUrl}/>}
+              </Paper>
+            </Fade>
+          } else if(value.transition === 'fade'){
+            return <Fade key={index} timeout={1000} in={this.state.currentSlideIndex[cIndex] === index ? true : false} >
+              <Paper square className={this.props.classes.mediaContainer} style={{ height: itemHeight, width:itemWidth, display: 'flex', justifyContent: 'center', alignItems: 'center' }} >
+              {this.state.mediaCollection[currentIndex].type === "video/mp4" ? <ReactPlayer width='100%' height="100%" loop={this.state.contents[cIndex].length > 1 ? false : true} playing={this.state.currentSlideIndex[cIndex] === index ? true : false} url={this.state.mediaCollection[currentIndex].imageUrl} onEnded={()=> this.toggleNextSlide(cIndex)}/>:<AutoFitImage imgSize="contain" imgSrc={this.state.mediaCollection[currentIndex].imageUrl}/>}
+              </Paper>
+            </Fade>
+          } else if(value.transition === 'zoom'){
+            return <Zoom key={index} timeout={1000} in={this.state.currentSlideIndex[cIndex] === index ? true : false} >
+              <Paper square className={this.props.classes.mediaContainer} style={{ height: itemHeight, width:itemWidth, display: 'flex', justifyContent: 'center', alignItems: 'center' }} >
+              {this.state.mediaCollection[currentIndex].type === "video/mp4" ? <ReactPlayer width='100%' height="100%" loop={this.state.contents[cIndex].length > 1 ? false : true} playing={this.state.currentSlideIndex[cIndex] === index ? true : false} url={this.state.mediaCollection[currentIndex].imageUrl} onEnded={()=> this.toggleNextSlide(cIndex)}/>:<AutoFitImage imgSize="contain" imgSrc={this.state.mediaCollection[currentIndex].imageUrl}/>}
+              </Paper>
+            </Zoom>
+          } else if(value.transition === 'grow'){
+            return <Grow key={index} timeout={1000} in={this.state.currentSlideIndex[cIndex] === index ? true : false} >
+              <Paper square className={this.props.classes.mediaContainer} style={{ height: itemHeight, width:itemWidth, display: 'flex', justifyContent: 'center', alignItems: 'center' }} >
+              {this.state.mediaCollection[currentIndex].type === "video/mp4" ? <ReactPlayer width='100%' height="100%" loop={this.state.contents[cIndex].length > 1 ? false : true} playing={this.state.currentSlideIndex[cIndex] === index ? true : false} url={this.state.mediaCollection[currentIndex].imageUrl} onEnded={()=> this.toggleNextSlide(cIndex)}/>:<AutoFitImage imgSize="contain" imgSrc={this.state.mediaCollection[currentIndex].imageUrl}/>}
+              </Paper>
+            </Grow >
+          }
+
+
+         
+        })
     }
 
     onAddMediaClick = selected => {
 
-      const contents = this.state.contents
+      const newContents = [...this.state.contents]
       selected.map((value, index) => {
-        contents[this.state.currentContainer].push(value)
+        const currentIndex = newContents[this.state.currentContainer].map(val => { return val.content }).indexOf(value)
+        const currentMediaIndex = this.state.mediaCollection.map(val => { return val.id }).indexOf(value)
+        if(currentIndex === -1)
+        {
+          if(this.state.mediaCollection[currentMediaIndex].type === 'video/mp4')
+          {
+            newContents[this.state.currentContainer].push({ duration: null, transition: 'fade', content: value, type: this.state.mediaCollection[currentMediaIndex].type })
+          } else {
+            newContents[this.state.currentContainer].push({ duration: 10, transition: 'fade', content: value, type: this.state.mediaCollection[currentMediaIndex].type })
+          }
+         
+        }
       })
 
       if(this.state.selectedTemplate !== 'default'){
@@ -350,7 +536,7 @@ class CustomizedAddCampaign extends Component {
             value.container.map((val, index) => {
               if(this.state.allContainer[index] == '' && index == this.state.currentContainer)
               {
-                allContainer.push(contents[this.state.currentContainer][0])
+                allContainer.push(newContents[this.state.currentContainer][0].content)
               } else {
                 allContainer.push(this.state.allContainer[index])
               }
@@ -359,13 +545,14 @@ class CustomizedAddCampaign extends Component {
           }
         })
 
-        this.setState({ contents, openDialog: false, allContainer })
+        this.setState({ contents: newContents, openDialog: false, allContainer, contentDuration: newContents[this.state.currentContainer][0].duration, transitionSelected: newContents[this.state.currentContainer][0].transition })
       } else {
         const allContainer = []
-        allContainer.push(contents[this.state.currentContainer][0])
+        allContainer.push(newContents[this.state.currentContainer][0].content)
 
-        this.setState({ contents, openDialog: false, allContainer })
+        this.setState({ contents: newContents, openDialog: false, allContainer, contentDuration: newContents[this.state.currentContainer][0].duration, transitionSelected: newContents[this.state.currentContainer][0].transition })
       }
+
     }
 
     handleCampaignNameChange = event => {
@@ -419,8 +606,212 @@ class CustomizedAddCampaign extends Component {
       }
       this.props.handleTabsChangeIndex(0)
       
-      this.setState({ selectedTemplate:'default', contents: [[]], campaignName: '', allContainer: [], currentContainer: 0 })
+      this.setState({ selectedTemplate:'default', contents: [[]], campaignName: '', allContainer: [], currentContainer: 0, transitionSelected: 'fade', contentDuration: 0, currentSlideIndex: [0] })
     }
+
+    onRemoveSortableListItem = () => {
+      const { checked } = this.state;
+      const newAllContainer = [...this.state.allContainer];
+      const newContents = [...this.state.contents];
+
+      checked.map(value => {
+
+        const currentIndex = newContents[this.state.currentContainer].map(val => { return val.content }).indexOf(value)
+
+        if (currentIndex !== -1) {
+          newContents[this.state.currentContainer].splice(currentIndex, 1);
+        } 
+
+        if(newAllContainer[this.state.currentContainer] === value){
+          newAllContainer[this.state.currentContainer] = ''
+        }
+
+      })
+
+      this.setState({ contents: newContents, checked: [], allContainer: newAllContainer })
+    }
+
+    handleContentDurationChange = name => event => {
+
+      const currentContent = this.state.allContainer[this.state.currentContainer]
+      const currenIndex = this.state.contents[this.state.currentContainer].map(val => { return val.content }).indexOf(currentContent)
+
+      if(currenIndex !== -1){
+        if(event.target.value >= 0 ){
+          this.state.contents[this.state.currentContainer][currenIndex].duration = event.target.value
+          this.setState({ [name]: event.target.value });
+        } else {
+          this.state.contents[this.state.currentContainer][currenIndex].duration = 0
+          this.setState({ [name]: 0 });
+        }
+      } else {
+        if(event.target.value >= 0 ){
+          this.setState({ [name]: event.target.value });
+        } else {
+          this.setState({ [name]: 0 });
+        }
+      }
+      
+    }
+
+    handleTransitionChange = event => {
+      const currentContent = this.state.allContainer[this.state.currentContainer]
+      const currenIndex = this.state.contents[this.state.currentContainer].map(val => { return val.content }).indexOf(currentContent)
+      
+      if(currenIndex !== -1){
+        this.state.contents[this.state.currentContainer][currenIndex].transition = event.target.value
+        this.setState({ transitionSelected: event.target.value });
+      } else {
+        this.setState({ transitionSelected: event.target.value });
+      }
+
+    }
+    
+    renderTransition(){
+      return(
+        <Grid container>
+          <Grid item xs={3} style={{ paddingRight: 5 }}>
+            <TextField
+              disabled={this.state.contents[this.state.currentContainer].length > 0 && this.state.contentDuration !== null? false:true}
+              fullWidth 
+              id="outlined-number"
+              label="Duration"
+              value={this.state.contentDuration === null ? 0 : this.state.contentDuration}
+              InputProps={{ inputProps: { min: 0, max: 3600 } }}
+              onChange={this.handleContentDurationChange('contentDuration')}
+              type="number"
+              InputLabelProps={{
+                shrink: true,
+              }}
+              margin="normal"
+              variant="outlined"
+            />
+          </Grid>
+          <Grid item xs={9} style={{ paddingLeft: 5 }}>
+            <form autoComplete="off">
+              <FormControl margin="normal" fullWidth variant="outlined" >
+                <InputLabel
+                  htmlFor="outlined-age-simple"
+                >
+                  Transition
+                </InputLabel>
+                <Select
+                  disabled={this.state.contents[this.state.currentContainer].length > 0 ? false:true}
+                  value={this.state.transitionSelected}
+                  onChange={this.handleTransitionChange}
+                  input={
+                    <OutlinedInput
+                      fullWidth
+                      labelWidth={100}
+                      name="age"
+                      id="outlined-age-simple"
+                    />
+                  }
+                >
+                  <MenuItem value="none">
+                    <em>None</em>
+                  </MenuItem>
+                  <MenuItem value="fade">Fade</MenuItem>
+                  <MenuItem value="zoom">Zoom</MenuItem>
+                  <MenuItem value="grow">Grow</MenuItem>
+                </Select>
+              </FormControl>
+            </form>
+          </Grid>
+        </Grid>
+      )
+    }
+
+    onPreviewClick = () => {
+      this.setState({ 
+        openDialog: true, 
+        dialogOption: 'preview', 
+        dialogTitle: 'Preview',
+        dialogTitleVisible: false
+      })
+      
+      this.shiftSlide()
+    }
+
+    toggleSlide = (index) => event =>{
+      
+      
+      if(this.state.currentSlideIndex[index] < this.state.contents[index].length - 1){
+        const newCurrentSlide = [...this.state.currentSlideIndex]
+        newCurrentSlide[index] = newCurrentSlide[index] + 1
+        this.setState({ currentSlideIndex: newCurrentSlide })
+
+        const nextSlideIndex = newCurrentSlide[index]
+        if(this.state.contents[index][nextSlideIndex].type !== 'video/mp4' ){
+          this.loopSlide(index)
+        }
+      } else {
+        const newCurrentSlide = [...this.state.currentSlideIndex]
+        newCurrentSlide[index] = 0
+        this.setState({ currentSlideIndex: newCurrentSlide })
+
+        const nextSlideIndex = newCurrentSlide[index]
+        if(this.state.contents[index][nextSlideIndex].type !== 'video/mp4' ){
+          this.loopSlide(index)
+        }
+      }
+     
+    } 
+
+    toggleNextSlide = (index) => {
+      
+      
+      if(this.state.currentSlideIndex[index] < this.state.contents[index].length - 1){
+        const newCurrentSlide = [...this.state.currentSlideIndex]
+        newCurrentSlide[index] = newCurrentSlide[index] + 1
+        this.setState({ currentSlideIndex: newCurrentSlide })
+
+        const nextSlideIndex = newCurrentSlide[index]
+        if(this.state.contents[index][nextSlideIndex].type !== 'video/mp4' ){
+          this.loopNextSlide(index, nextSlideIndex)
+        }
+      } else {
+        const newCurrentSlide = [...this.state.currentSlideIndex]
+        newCurrentSlide[index] = 0
+        this.setState({ currentSlideIndex: newCurrentSlide })
+
+        const nextSlideIndex = newCurrentSlide[index]
+        if(this.state.contents[index][nextSlideIndex].type !== 'video/mp4' ){
+          this.loopNextSlide(index, nextSlideIndex)
+        }
+      }
+     
+    } 
+
+    loopNextSlide = (index, nextSlideIndex) => {
+      timeout[index] = this.props.setTimeout(this.toggleSlide(index, this.state.contents[index].length), this.state.contents[index][nextSlideIndex].duration * 1000)
+    }
+
+    loopSlide = (index) => {
+      timeout[index] = this.props.setTimeout(this.toggleSlide(index, this.state.contents[index].length), this.state.contents[index][this.state.currentSlideIndex[index]].duration * 1000)
+    }
+
+    shiftSlide = () => {
+
+      if(this.state.selectedTemplate !== 'default')
+      {
+        const currentIndex = this.state.templateCollection.map(val => { return val.id }).indexOf(this.state.selectedTemplate)
+        this.state.templateCollection[currentIndex].container.map((val, index) => {
+          if(this.state.contents[index].length > 1){
+            if(this.state.contents[index][0].type !== 'video/mp4')
+            {
+              timeout[index] = this.props.setTimeout(this.toggleSlide(index), this.state.contents[index][this.state.currentSlideIndex[index]].duration * 1000)
+            } 
+          }
+        })
+
+      } else {
+        if( this.state.contents[0].length > 1 && this.state.contents[0][0].type !== 'video/mp4'){
+          timeout[0] = this.props.setTimeout(this.toggleSlide(0), this.state.contents[0][this.state.currentSlideIndex[0]].duration * 1000)
+        }
+      }
+      
+    }  
 
     render() {
         const { classes } = this.props;
@@ -432,10 +823,11 @@ class CustomizedAddCampaign extends Component {
                 aria-labelledby="customized-dialog-title"
                 open={this.state.openDialog}
                 maxWidth='xl'
-            >
+            >{this.state.dialogTitleVisible ? 
             <DialogTitle id="customized-dialog-title" onClose={this.handleClose}>
                 {this.state.dialogTitle}
-            </DialogTitle> 
+            </DialogTitle> : <div></div>}
+            
             {this.renderDialog()}
             </Dialog>
             <Grid style={{ minHeight:windowHeight }} container>
@@ -472,12 +864,33 @@ class CustomizedAddCampaign extends Component {
 
                         </Select>
                     </FormControl>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <Button fullWidth style={{ marginTop: 10 }} variant="outlined" color="primary" onClick={()=> this.setState({ openDialog: true, dialogOption: 'addMedia', dialogTitle: 'Add Media' }) }>
-                        Add File
-                        </Button>
-                    </div>
-                    <Grid style={{ position: 'relative', overflow: 'auto' }} item xs={12}>
+                    <Grid container>
+                      {this.state.checked.length > 0 ? 
+                        <Grid container>
+                          <Grid item xs={9} style={{ paddingRight: 5 }}>
+                            <Button fullWidth style={{ marginTop: 10 }} variant="outlined" color="primary" onClick={()=> this.setState({ openDialog: true, dialogOption: 'addMedia', dialogTitle: 'Add Media', dialogTitleVisible: true }) }>
+                            Add File
+                            </Button>
+                          </Grid>
+                          <Grid item xs={3} style={{ paddingLeft: 5 }}>
+                            <Button fullWidth style={{ marginTop: 10 }} variant="outlined" color="secondary" onClick={()=> this.onRemoveSortableListItem() }>
+                            Delete
+                            </Button>
+                          </Grid>
+                          {this.renderTransition()}
+                        </Grid>
+                        : 
+                        <Grid container>
+                          <Grid item xs={12}>
+                            <Button fullWidth style={{ marginTop: 10 }} variant="outlined" color="primary" onClick={()=> this.setState({ openDialog: true, dialogOption: 'addMedia', dialogTitle: 'Add Media', dialogTitleVisible: true }) }>
+                            Add File
+                            </Button>
+                          </Grid>
+                          {this.renderTransition()}
+                        </Grid>
+                        }
+                    </Grid>
+                    <Grid style={{ height:windowHeight - 205, position: 'relative', overflow: 'auto' }} item xs={12}>
                         {this.renderSortable()}
                     </Grid>
                 </Grid>
@@ -487,9 +900,18 @@ class CustomizedAddCampaign extends Component {
                     </Grid>
                 </Grid>
                 <Grid style={{ height: windowHeight, padding: 10 }} item xs={3}>
-                  <Button fullWidth style={{ marginTop: 10 }} variant="outlined" color="primary" onClick={()=> this.handleSaveCampaign()}>
-                  Save
-                  </Button>
+                  <Grid container>
+                    <Grid style={{ paddingRight: 5 }} item xs={6}>
+                      <Button fullWidth style={{ marginTop: 10 }} variant="outlined" color="secondary" onClick={()=> this.handleSaveCampaign()}>
+                      Save
+                      </Button>
+                    </Grid>
+                    <Grid style={{ paddingLeft: 5 }} item xs={6}>
+                      <Button fullWidth style={{ marginTop: 10 }} variant="outlined" color="default" onClick={()=> this.onPreviewClick()}>
+                      Preview
+                      </Button>
+                    </Grid>
+                  </Grid>
                   <TextField
                     fullWidth
                     autoFocus
@@ -510,5 +932,8 @@ CustomizedAddCampaign.propTypes = {
     classes: PropTypes.object.isRequired,
 };
   
-export default withStyles(styles)(CustomizedAddCampaign);
+export default compose(
+  withStyles(styles),
+  ReactTimeout
+)(CustomizedAddCampaign);
   

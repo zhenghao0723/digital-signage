@@ -174,7 +174,7 @@ class CustomizedDropzone extends Component {
                 multiple
                 hidden 
             />
-            <Dropzone disabled={this.state.isUploading} multiple onDrop={this.onDrop} accept="image/png, image/jpeg, video/mp4" minSize={0} maxSize={20428800}>
+            <Dropzone disabled={this.state.isUploading} multiple onDrop={this.onDrop} accept="image/png, image/jpeg, video/mp4" minSize={0} maxSize={45428800}>
                 {({getRootProps, getInputProps, isDragActive, isDragAccept, isDragReject, rejectedFiles}) => (
                 <div>
                     <Container {...getRootProps({isDragActive, isDragAccept, isDragReject, rejectedFiles})}>
