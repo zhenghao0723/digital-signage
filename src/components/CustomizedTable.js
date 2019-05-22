@@ -32,6 +32,8 @@ import Select from '@material-ui/core/Select';
 import OutlinedInput from '@material-ui/core/OutlinedInput';
 import MenuItem from '@material-ui/core/MenuItem';
 import firebase from "firebase";
+import ReactPlayer from 'react-player'
+import AutoFitImage from 'react-image-autofit-frame';
 
 function desc(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -465,8 +467,8 @@ class EnhancedTable extends React.Component {
 
     if(this.state.dialogOption === 'preview'){
         return(
-            <DialogContent>
-                { this.state.dialogType === 'video/mp4' ? <video style={{ width: '100%'}}  autoPlay src={this.state.dialogUrl} type="video/mp4"></video> : <img alt='' style={{ width: '100%'}} src={this.state.dialogUrl} /> }
+            <DialogContent style={{ maxWidth: 500, maxHeight: 500, marginTop: 20 }}>
+                { this.state.dialogType === 'video/mp4' ? <ReactPlayer width='100%' height="100%"  playing={true} url={this.state.dialogUrl}></ReactPlayer> : <AutoFitImage frameWidth={450 + "px"} frameHeight={450 + "px"} imgSize="contain" imgSrc={this.state.dialogUrl} /> }
             </DialogContent>
         )
     } 
@@ -474,7 +476,7 @@ class EnhancedTable extends React.Component {
     else if(this.state.dialogOption === 'edit'){
         return(
             <div>
-            <DialogContent>
+            <DialogContent >
                 <TextField
                     margin="dense"
                     id="name"
@@ -674,10 +676,14 @@ class EnhancedTable extends React.Component {
             onClose={this.handleClose}
             aria-labelledby="customized-dialog-title"
             open={this.state.openDialog}
+            maxWidth='xl'
           >
-          <DialogTitle id="customized-dialog-title" onClose={this.handleClose}>
-            {this.state.dialogTitle}
-          </DialogTitle>
+            {this.state.dialogOption  !== 'preview' ?
+              <DialogTitle id="customized-dialog-title" onClose={this.handleClose}>
+                {this.state.dialogTitle}
+              </DialogTitle> : <div></div>
+            }
+          
           {this.renderDialog()}
         </Dialog>
         <EnhancedTableToolbar folderSelection={this.props.folderSelection} numSelected={selected.length} onDeleteAllClick={this.onDeleteAllClick} onMoveAllClick={this.onMoveAllClick} movefile={this.props.movefile} select={this.props.select} onAddMediaClick={()=> this.props.onAddMediaClick(this.state.selected)} currentFolder={this.state.currentFolder} handleFolderChange={this.handleFolderChange} folderCollection={this.props.folderCollection}/>

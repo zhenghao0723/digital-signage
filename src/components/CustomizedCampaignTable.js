@@ -220,6 +220,9 @@ const styles = theme => ({
   AppBar: {
     boxShadow: 'none',
     borderBottom: '1px solid #e8e8e8',
+  },
+  tab: {
+    borderLeft: '1px solid #e8e8e8',
   }
 });
 
@@ -448,7 +451,7 @@ class EnhancedTable extends React.Component {
     const { classes, rows, data, theme } = this.props;
     const { order, orderBy, selected, rowsPerPage, page } = this.state;
     const emptyRows = rowsPerPage - Math.min(rowsPerPage, data.length - page * rowsPerPage);
-
+    
     return (
       <div className={classes.root}>
         <AppBar className={classes.AppBar} position="static" color="default">
@@ -460,7 +463,8 @@ class EnhancedTable extends React.Component {
             variant="fullWidth"
           >
             <Tab disableRipple label="Campaign List" />
-            <Tab disableRipple label="Create Campaign" />
+            <Tab className={classes.tab} disableRipple label="Create Campaign" />
+            <Tab className={classes.tab} disableRipple disabled label="Edit Campaign" />
           </Tabs>
         </AppBar>
         <Dialog
@@ -491,11 +495,7 @@ class EnhancedTable extends React.Component {
           }
           {this.renderDialog()}
         </Dialog>
-        <SwipeableViews
-          axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
-          index={this.state.value}
-          //onChangeIndex={this.handleTabsChangeIndex}
-        >
+        {this.state.value === 0 && 
           <TabContainer dir={theme.direction}>
             <EnhancedTableToolbar numSelected={selected.length} onDeleteAllClick={this.onDeleteAllClick} movefile={this.props.movefile} onAddCampaignClick={this.onAddCampaignClick}/>
             <div className={classes.tableWrapper}>
@@ -597,11 +597,13 @@ class EnhancedTable extends React.Component {
               onChangePage={this.handleChangePage}
               onChangeRowsPerPage={this.handleChangeRowsPerPage}
             />
-          </TabContainer>
-          <TabContainer dir={theme.direction}>
+          </TabContainer>}
+          {this.state.value === 1 && <TabContainer dir={theme.direction}>
               <CustomizedAddCampaign handleTabsChangeIndex={this.handleTabsChangeIndex}/>
-          </TabContainer>
-        </SwipeableViews>
+            </TabContainer> }
+          {this.state.value === 2 && <TabContainer dir={theme.direction}>
+              <CustomizedAddCampaign handleTabsChangeIndex={this.handleTabsChangeIndex}/>
+            </TabContainer> }
       </div>
     );
   }

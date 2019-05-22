@@ -813,6 +813,10 @@ class CustomizedAddCampaign extends Component {
       
     }  
 
+    onClearClick = () => {
+      this.setState({ selectedTemplate:'default', contents: [[]], campaignName: '', allContainer: [], currentContainer: 0, transitionSelected: 'fade', contentDuration: 0, currentSlideIndex: [0] })
+    }
+
     render() {
         const { classes } = this.props;
 
@@ -901,14 +905,19 @@ class CustomizedAddCampaign extends Component {
                 </Grid>
                 <Grid style={{ height: windowHeight, padding: 10 }} item xs={3}>
                   <Grid container>
-                    <Grid style={{ paddingRight: 5 }} item xs={6}>
+                    <Grid style={{ paddingRight: 5 }} item xs={4}>
                       <Button fullWidth style={{ marginTop: 10 }} variant="outlined" color="secondary" onClick={()=> this.handleSaveCampaign()}>
                       Save
                       </Button>
                     </Grid>
-                    <Grid style={{ paddingLeft: 5 }} item xs={6}>
+                    <Grid style={{ paddingLeft: 5, paddingRight: 5 }} item xs={4}>
                       <Button fullWidth style={{ marginTop: 10 }} variant="outlined" color="default" onClick={()=> this.onPreviewClick()}>
                       Preview
+                      </Button>
+                    </Grid>
+                    <Grid style={{ paddingLeft: 5 }} item xs={4}>
+                      <Button fullWidth style={{ marginTop: 10 }} variant="outlined" color="default" onClick={()=> this.onClearClick()}>
+                      Clear
                       </Button>
                     </Grid>
                   </Grid>
